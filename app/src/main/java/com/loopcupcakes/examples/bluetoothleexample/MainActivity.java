@@ -34,7 +34,6 @@ public class MainActivity extends AppCompatActivity implements ListView.OnItemCl
     private BluetoothAdapter mBluetoothAdapter;
     private Handler mHandler;
     private BluetoothLeScanner mBluetoothScanner;
-    private boolean mScanning = false;
     private ArrayAdapter<String> mArrayAdapter;
 
     private ArrayList<BluetoothDevice> mBluetoothDevices;
@@ -95,15 +94,12 @@ public class MainActivity extends AppCompatActivity implements ListView.OnItemCl
             mHandler.postDelayed(new Runnable() {
                 @Override
                 public void run() {
-                    mScanning = false;
                     mBluetoothScanner.stopScan(mLeScanCallback);
                 }
             }, SCAN_PERIOD);
 
-            mScanning = true;
             mBluetoothScanner.startScan(mLeScanCallback);
         } else {
-            mScanning = false;
             mBluetoothScanner.startScan(mLeScanCallback);
         }
     }
