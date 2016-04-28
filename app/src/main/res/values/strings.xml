@@ -1,0 +1,6 @@
+<resources>
+    <string name="app_name">BluetoothLEExample</string>
+    <string name="ble_not_supported">Bluetooth low energy not supported</string>
+    <string name="unknown_service">Unknown service</string>
+    <string name="unknown_characteristic">Unknown characteristic</string>
+</resources>
