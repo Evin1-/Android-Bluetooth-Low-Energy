@@ -151,23 +151,11 @@ public class DeviceActivity extends AppCompatActivity {
                 Log.d(TAG, "displayGattServices: Char " + uuid);
                 if (uuid.equals("00002a19-0000-1000-8000-00805f9b34fb")) {
                     mBluetoothGatt.setCharacteristicNotification(gattCharacteristic, true);
-//                    setCharacteristicNotification(mBluetoothDevice, gattCharacteristic.getUuid(), gattService.getUuid(), true);
                 }
             }
             mGattCharacteristics.add(bluetoothGattCharacteristics);
             gattCharacteristicData.add(gattCharacteristicGroupData);
         }
-    }
-
-    public boolean setCharacteristicNotification(BluetoothDevice device, UUID serviceUuid, UUID characteristicUuid,
-                                                 boolean enable) {
-        Log.d(TAG, "setCharacteristicNotification(device=" + device.getName() + device.getAddress() + ", UUID="
-                + characteristicUuid + ", enable=" + enable + " )");
-        BluetoothGattCharacteristic characteristic = mBluetoothGatt.getService(serviceUuid).getCharacteristic(characteristicUuid);
-        mBluetoothGatt.setCharacteristicNotification(characteristic, enable);
-        BluetoothGattDescriptor descriptor = characteristic.getDescriptor(UUID.fromString(SampleGattAttributes.CLIENT_CHARACTERISTIC_CONFIG));
-        descriptor.setValue(enable ? BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE : new byte[]{0x00, 0x00});
-        return mBluetoothGatt.writeDescriptor(descriptor); //descriptor write operation successfully started?
     }
 
     @Override
