@@ -1,6 +1,8 @@
 package com.loopcupcakes.examples.bluetoothleexample;
 
+import android.app.Activity;
 import android.app.Application;
+import android.content.pm.ActivityInfo;
 import android.support.test.espresso.Espresso;
 import android.support.test.espresso.NoMatchingViewException;
 import android.support.test.espresso.ViewAssertion;
@@ -60,6 +62,17 @@ public class ApplicationTest extends ApplicationTestCase<Application> {
                 }
             }
         });
+    }
+
+    @Test
+    public void testOrientationChange() {
+        int requestedOrientation = mActivityTestRule.getActivity().getRequestedOrientation();
+        if (requestedOrientation == ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE) {
+            mActivityTestRule.getActivity().setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+        } else {
+            mActivityTestRule.getActivity().setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
+        }
+        assertTrue(mActivityTestRule.getActivity().orientationChanged);
     }
 
     @After

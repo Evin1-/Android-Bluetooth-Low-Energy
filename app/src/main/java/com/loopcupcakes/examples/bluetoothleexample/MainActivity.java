@@ -10,6 +10,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
+import android.hardware.SensorManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.test.espresso.idling.CountingIdlingResource;
@@ -18,6 +19,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.MotionEvent;
+import android.view.OrientationEventListener;
 import android.view.View;
 import android.view.ViewPropertyAnimator;
 import android.widget.Button;
@@ -65,8 +67,11 @@ public class MainActivity extends AppCompatActivity {
 
     public CountingIdlingResource idlingResource = new CountingIdlingResource("BlueToothLEButton");
 
-    @State boolean orientationChanged = false;
-    @State boolean isRefreshing = false;
+    @State boolean bleButtonEnabled;
+    @State String bleInfoText;
+    @State int orientation;
+    @State boolean orientationChanged;
+    @State boolean isRefreshing;
 
     private ScanCallback mLeScanCallback = new ScanCallback() {
         @Override
@@ -97,6 +102,31 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        init();
+    }
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        Icepick.saveInstanceState(this, outState);
+    }
+
+    @Override
+    protected void onRestoreInstanceState(Bundle savedInstanceState) {
+        super.onRestoreInstanceState(savedInstanceState);
+        Icepick.restoreInstanceState(this, savedInstanceState);
+    }
+
+    @Override
+    public void onConfigurationChanged(Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+        orientationChanged  = true;
+        orientation = newConfig.orientation;
+        init();
+    }
+
+    private void init() {
         setContentView(R.layout.activity_main);
 
         Fabric.with(this, new Crashlytics());
@@ -112,32 +142,15 @@ public class MainActivity extends AppCompatActivity {
 
         setListView();
 
-        if (!orientationChanged) {
-            scanLeDevice(true);
-        }
+        setBleInfoText(bleInfoText);
 
         setupRefreshView();
 
         setupScanLEButton();
-    }
 
-    @Override
-    public void onConfigurationChanged(Configuration newConfig) {
-        super.onConfigurationChanged(newConfig);
-
-        orientationChanged = true;
-    }
-
-    @Override
-    protected void onSaveInstanceState(Bundle outState) {
-        super.onSaveInstanceState(outState);
-        Icepick.saveInstanceState(this, outState);
-    }
-
-    @Override
-    protected void onRestoreInstanceState(Bundle savedInstanceState) {
-        super.onRestoreInstanceState(savedInstanceState);
-        Icepick.restoreInstanceState(this, savedInstanceState);
+        if (!orientationChanged) {
+            scanLeDevice(true);
+        }
     }
 
     private void setListView() {
@@ -202,6 +215,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void setupRefreshView() {
+        mRefreshLayout.setRefreshing(isRefreshing);
         mRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
             @Override
             public void onRefresh() {
@@ -211,6 +225,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void setupScanLEButton() {
+        mScanLEButton.setEnabled(bleButtonEnabled);
         mViewPropertyAnimator = mScanLEButton.animate();
         mScanLEButton.setOnTouchListener(new View.OnTouchListener() {
             @Override
@@ -242,15 +257,23 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void updateViews(boolean enabled, String status) {
-        mTextView.setText(status);
+        setBleInfoText(status);
+        bleButtonEnabled = enabled;
         mScanLEButton.setEnabled(enabled);
         mRefreshLayout.setRefreshing(!enabled);
         if (enabled) {
-            idlingResource.decrement();
+            if (!idlingResource.isIdleNow()) {
+                idlingResource.decrement();
+            }
             isRefreshing = false;
         } else {
             idlingResource.increment();
             isRefreshing = true;
         }
+    }
+
+    private void setBleInfoText(String bleInfoText) {
+        this.bleInfoText = bleInfoText;
+        mTextView.setText(bleInfoText);
     }
 }
