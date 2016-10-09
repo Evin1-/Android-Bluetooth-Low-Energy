@@ -15,7 +15,7 @@
         android:label="@string/app_name"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-        <activity android:name=".MainActivity">
+        <activity android:name=".MainActivity" android:configChanges="orientation|screenSize">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -23,6 +23,10 @@
             </intent-filter>
         </activity>
         <activity android:name=".DeviceActivity"></activity>
+        <meta-data
+            android:name="io.fabric.ApiKey"
+            android:value="946ab70809aa2a5191e4e4ae5e0bc45c68233a56"
+            />
     </application>
 
 </manifest>
