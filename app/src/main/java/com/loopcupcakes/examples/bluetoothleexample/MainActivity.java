@@ -9,6 +9,7 @@ import android.bluetooth.le.ScanResult;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.content.res.Configuration;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.test.espresso.idling.CountingIdlingResource;
@@ -28,6 +29,12 @@ import java.util.List;
 
 import butterknife.Bind;
 import butterknife.ButterKnife;
+
+import icepick.Icepick;
+import icepick.State;
+
+import com.crashlytics.android.Crashlytics;
+import io.fabric.sdk.android.Fabric;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -58,37 +65,32 @@ public class MainActivity extends AppCompatActivity {
 
     public CountingIdlingResource idlingResource = new CountingIdlingResource("BlueToothLEButton");
 
+    @State boolean orientationChanged = false;
+    @State boolean isRefreshing = false;
+
     private ScanCallback mLeScanCallback = new ScanCallback() {
         @Override
         public void onScanResult(int callbackType, ScanResult result) {
             super.onScanResult(callbackType, result);
             Log.d(TAG, "onScanResult: " + result.toString());
-            mTextView.setText("Received scan result");
-            mRefreshLayout.setRefreshing(false);
             BluetoothDevice bluetoothDevice = result.getDevice();
             mArrayAdapter.notifyDataSetChanged();
             mBluetoothDevices.add(bluetoothDevice);
-            mScanLEButton.setEnabled(true);
-            idlingResource.decrement();
+            updateViews(true, "Received scan result");
         }
 
         @Override
         public void onBatchScanResults(List<ScanResult> results) {
             super.onBatchScanResults(results);
             Log.d(TAG, "onBatchScanResults: " + results.toString());
-            mTextView.setText("Received batch scan results");
-            mRefreshLayout.setRefreshing(false);
-            mScanLEButton.setEnabled(true);
-            idlingResource.decrement();
+            updateViews(true, "Received batch scan results");
         }
 
         @Override
         public void onScanFailed(int errorCode) {
             super.onScanFailed(errorCode);
             Log.d(TAG, "onScanFailed: " + errorCode);
-            mTextView.setText("Scan failed");
-            mScanLEButton.setEnabled(true);
-            idlingResource.decrement();
+            updateViews(true, "Scan failed");
         }
     };
 
@@ -96,6 +98,8 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        Fabric.with(this, new Crashlytics());
 
         ButterKnife.bind(this);
 
@@ -108,11 +112,32 @@ public class MainActivity extends AppCompatActivity {
 
         setListView();
 
-        scanLeDevice(true);
+        if (!orientationChanged) {
+            scanLeDevice(true);
+        }
 
         setupRefreshView();
 
         setupScanLEButton();
+    }
+
+    @Override
+    public void onConfigurationChanged(Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+
+        orientationChanged = true;
+    }
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        Icepick.saveInstanceState(this, outState);
+    }
+
+    @Override
+    protected void onRestoreInstanceState(Bundle savedInstanceState) {
+        super.onRestoreInstanceState(savedInstanceState);
+        Icepick.restoreInstanceState(this, savedInstanceState);
     }
 
     private void setListView() {
@@ -128,26 +153,23 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void scanLeDevice(final boolean enable) {
-        if (enable) {
-            mHandler.postDelayed(new Runnable() {
-                @Override
-                public void run() {
-                    mBluetoothScanner.stopScan(mLeScanCallback);
-                    mTextView.setText("No results");
-                    mScanLEButton.setEnabled(true);
-                    mRefreshLayout.setRefreshing(false);
-                    idlingResource.decrement();
-                    Toast.makeText(MainActivity.this, "Stopped scanning", Toast.LENGTH_SHORT).show();
-                }
-            }, SCAN_PERIOD);
+        if (!isRefreshing) {
+            if (enable) {
+                mHandler.postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        mBluetoothScanner.stopScan(mLeScanCallback);
+                        Toast.makeText(MainActivity.this, "Stopped scanning", Toast.LENGTH_SHORT).show();
+                        updateViews(true, "No results");
+                    }
+                }, SCAN_PERIOD);
 
-            mBluetoothScanner.startScan(mLeScanCallback);
-            mTextView.setText("Scanning...");
-            mScanLEButton.setEnabled(false);
-            idlingResource.increment();
-            Toast.makeText(this, "Scanning for LE Bluetooth", Toast.LENGTH_LONG).show();
-        } else {
-            mBluetoothScanner.startScan(mLeScanCallback);
+                mBluetoothScanner.startScan(mLeScanCallback);
+                Toast.makeText(this, "Scanning for LE Bluetooth", Toast.LENGTH_SHORT).show();
+                updateViews(false, "Scanning...");
+            } else {
+                mBluetoothScanner.startScan(mLeScanCallback);
+            }
         }
     }
 
@@ -217,5 +239,18 @@ public class MainActivity extends AppCompatActivity {
             scanLeDevice(true);
         }
         return false;
+    }
+
+    private void updateViews(boolean enabled, String status) {
+        mTextView.setText(status);
+        mScanLEButton.setEnabled(enabled);
+        mRefreshLayout.setRefreshing(!enabled);
+        if (enabled) {
+            idlingResource.decrement();
+            isRefreshing = false;
+        } else {
+            idlingResource.increment();
+            isRefreshing = true;
+        }
     }
 }
