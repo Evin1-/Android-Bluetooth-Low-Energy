@@ -20,7 +20,7 @@
 
     <android.support.v4.widget.SwipeRefreshLayout
         android:id="@+id/refresh_layout"
-        android:layout_weight="8"
+        android:layout_weight="4"
         android:layout_height="0dp"
         android:layout_width="match_parent">
 

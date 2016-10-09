@@ -8,4 +8,10 @@
         <item name="colorAccent">@color/colorAccent</item>
     </style>
 
+    <style name="CustomButtonTheme" parent="AlertDialog.AppCompat.Light">
+        <item name="android:colorControlHighlight">@color/colorPrimary</item>
+        <item name="android:colorButtonNormal">@color/colorPrimaryDark</item>
+        <item name="android:elevation">@dimen/custom_button_elevation</item>
+    </style>
+
 </resources>
